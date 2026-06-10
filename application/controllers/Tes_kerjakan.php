@@ -202,6 +202,15 @@ class Tes_kerjakan extends Tes_Controller {
         if($this->form_validation->run() == TRUE){
             $tesuser_id = $this->input->post('hentikan-tes-user-id', TRUE);
             
+            // Security Hardening: IDOR / BOLA Prevention
+            $check_owner = $this->cbt_tes_user_model->get_by_kolom_limit('tesuser_id', $tesuser_id, 1);
+            if ($check_owner->num_rows() == 0 || $check_owner->row()->tesuser_user_id != $this->user_id) {
+                $status['status'] = 0;
+                $status['pesan'] = 'Akses ditolak. Sesi ujian tidak valid.';
+                echo json_encode($status);
+                return;
+            }
+
             $centang = $this->input->post('hentikan-centang', TRUE);
             if(!empty($centang)){
                 $data_tes['tesuser_status']=4;
@@ -242,6 +251,15 @@ class Tes_kerjakan extends Tes_Controller {
             $tes_user_id = $this->input->post('tes-user-id', TRUE);
             $tes_soal_id = $this->input->post('tes-soal-id', TRUE);
             $tes_soal_nomor = $this->input->post('tes-soal-nomor', TRUE);
+
+            // Security Hardening: IDOR / BOLA Prevention
+            $check_owner = $this->cbt_tes_user_model->get_by_kolom_limit('tesuser_id', $tes_user_id, 1);
+            if ($check_owner->num_rows() == 0 || $check_owner->row()->tesuser_user_id != $this->user_id) {
+                $status['status'] = 0;
+                $status['pesan'] = 'Akses ditolak. Sesi ujian tidak valid.';
+                echo json_encode($status);
+                return;
+            }
 
             // Mengecek apakah tes masih berjalan dan waktu masih mencukupi
             //if($this->cbt_tes_user_model->count_by_status_waktu($tes_user_id)->row()->hasil>0){
@@ -395,6 +413,16 @@ class Tes_kerjakan extends Tes_Controller {
             $query_tes_soal = $this->cbt_tes_soal_model->get_by_kolom_limit('tessoal_id', $tessoal_id, 1);
             if($query_tes_soal->num_rows()>0){
                 $query_tes_soal = $query_tes_soal->row();
+                
+                // Security Hardening: IDOR / BOLA Prevention
+                $tesuser_id = $query_tes_soal->tessoal_tesuser_id;
+                $check_owner = $this->cbt_tes_user_model->get_by_kolom_limit('tesuser_id', $tesuser_id, 1);
+                if ($check_owner->num_rows() == 0 || $check_owner->row()->tesuser_user_id != $this->user_id) {
+                    $data['pesan'] = 'Akses ditolak. Sesi tidak valid.';
+                    echo json_encode($data);
+                    return;
+                }
+
                 $data['data'] = 1;
                 $data['tessoal_id'] = $query_tes_soal->tessoal_id;
                 $data['tessoal_ragu'] = $query_tes_soal->tessoal_ragu;
@@ -413,6 +441,26 @@ class Tes_kerjakan extends Tes_Controller {
         $data['data'] = 1;
 
         if(!empty($tessoal_id)){
+            // Security Hardening: IDOR / BOLA Prevention
+            $query_tessoal = $this->cbt_tes_soal_model->get_by_kolom_limit('tessoal_id', $tessoal_id, 1);
+            if ($query_tessoal->num_rows() > 0) {
+                $row_tessoal = $query_tessoal->row();
+                $tesuser_id = $row_tessoal->tessoal_tesuser_id;
+                
+                $check_owner = $this->cbt_tes_user_model->get_by_kolom_limit('tesuser_id', $tesuser_id, 1);
+                if ($check_owner->num_rows() == 0 || $check_owner->row()->tesuser_user_id != $this->user_id) {
+                    $data['data'] = 0;
+                    $data['pesan'] = 'Akses ditolak. Sesi tidak valid.';
+                    echo json_encode($data);
+                    return;
+                }
+            } else {
+                $data['data'] = 0;
+                $data['pesan'] = 'Soal tidak ditemukan.';
+                echo json_encode($data);
+                return;
+            }
+
             if(!empty($ragu)){
                 $data_tes_soal['tessoal_ragu'] = $ragu;    
             }else{
@@ -422,14 +470,9 @@ class Tes_kerjakan extends Tes_Controller {
             $this->cbt_tes_soal_model->update('tessoal_id', $tessoal_id, $data_tes_soal);
 
             // Record log for doubt/ragu status changes
-            $query_tessoal = $this->cbt_tes_soal_model->get_by_kolom_limit('tessoal_id', $tessoal_id, 1);
-            if ($query_tessoal->num_rows() > 0) {
-                $row_tessoal = $query_tessoal->row();
-                $tesuser_id = $row_tessoal->tessoal_tesuser_id;
-                $nomor = $row_tessoal->tessoal_order;
-                $status_ragu = (!empty($ragu) && $ragu == 1) ? 'Menandai ragu-ragu' : 'Menghilangkan status ragu-ragu';
-                $this->cbt_tes_user_log_model->insert_log($tesuser_id, 'Mengubah status ragu', $status_ragu . ' pada soal nomor ' . $nomor);
-            }
+            $nomor = $row_tessoal->tessoal_order;
+            $status_ragu = (!empty($ragu) && $ragu == 1) ? 'Menandai ragu-ragu' : 'Menghilangkan status ragu-ragu';
+            $this->cbt_tes_user_log_model->insert_log($tesuser_id, 'Mengubah status ragu', $status_ragu . ' pada soal nomor ' . $nomor);
         }
 
         echo json_encode($data);
@@ -441,6 +484,14 @@ class Tes_kerjakan extends Tes_Controller {
     function get_soal_by_tessoal($tessoal_id=null, $tesuser_id=null){
         $data['data'] = 0;
         if(!empty($tessoal_id) AND !empty($tesuser_id)){
+            // Security Hardening: IDOR / BOLA Prevention
+            $check_owner = $this->cbt_tes_user_model->get_by_kolom_limit('tesuser_id', $tesuser_id, 1);
+            if ($check_owner->num_rows() == 0 || $check_owner->row()->tesuser_user_id != $this->user_id) {
+                $data['pesan'] = 'Akses ditolak. Sesi tidak valid.';
+                echo json_encode($data);
+                return;
+            }
+
             $data_soal = $this->get_soal($tessoal_id, $tesuser_id);
             $data['data'] = $data_soal['data'];
             if(!empty($data_soal['tes_soal'])){
@@ -661,6 +712,16 @@ class Tes_kerjakan extends Tes_Controller {
         
         if($this->form_validation->run() == TRUE){
             $tesuser_id = $this->input->post('tes-user-id', TRUE);
+            
+            // Security Hardening: IDOR / BOLA Prevention
+            $check_owner = $this->cbt_tes_user_model->get_by_kolom_limit('tesuser_id', $tesuser_id, 1);
+            if ($check_owner->num_rows() == 0 || $check_owner->row()->tesuser_user_id != $this->user_id) {
+                $status['status'] = 0;
+                $status['pesan'] = 'Akses ditolak. Sesi ujian tidak valid.';
+                echo json_encode($status);
+                return;
+            }
+
             $violation_count = $this->input->post('violation-count', TRUE);
             
             $data_tes['tesuser_comment'] = $violation_count;

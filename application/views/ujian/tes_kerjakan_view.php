@@ -239,6 +239,42 @@
         });
     }
 
+    function showConnectionNotification(isOnline) {
+        var bar = $('#connection-bar');
+        if (bar.length === 0) {
+            $('body').append('<div id="connection-bar" style="position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; text-align: center; padding: 12px; font-weight: bold; font-size: 14px; color: #fff; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: all 0.3s ease;"></div>');
+            bar = $('#connection-bar');
+        }
+        if (isOnline) {
+            bar.css('background-color', '#00a65a')
+               .html('<i class="fa fa-check-circle"></i> Koneksi internet terhubung kembali. Sinkronisasi jawaban...')
+               .slideDown();
+            setTimeout(function() {
+                bar.slideUp();
+            }, 3000);
+        } else {
+            bar.css('background-color', '#dd4b39')
+               .html('<i class="fa fa-exclamation-triangle"></i> Koneksi internet terputus! Anda tetap dapat menjawab, jawaban disimpan aman secara lokal.')
+               .slideDown();
+        }
+    }
+
+    // Register offline / online network event listeners
+    window.addEventListener('offline', function() {
+        showConnectionNotification(false);
+    });
+    window.addEventListener('online', function() {
+        showConnectionNotification(true);
+        syncOfflineAnswers();
+    });
+
+    // Check initial network state
+    $(function() {
+        if (!navigator.onLine) {
+            showConnectionNotification(false);
+        }
+    });
+
     function isFullscreen() {
         return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
     }

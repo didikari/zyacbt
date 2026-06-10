@@ -54,6 +54,16 @@
                                 <input type="text" name="tes-benar" id="tes-benar" class="form-control input-sm" value="<?php if(!empty($benar)){ echo $benar; } ?>" readonly>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Foto Kehadiran</label>
+                            <div class="col-sm-9">
+                                <?php if(!empty($tesuser_photo)): ?>
+                                    <img src="<?php echo base_url('uploads/selfies/'.$tesuser_photo); ?>" class="img-thumbnail" style="max-height: 120px;" alt="Selfie Kehadiran" />
+                                <?php else: ?>
+                                    <span class="text-muted" style="line-height: 30px;"><i class="fa fa-picture-o"></i> Tidak ada foto</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

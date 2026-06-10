@@ -32,6 +32,14 @@ class Tes_hasil_detail extends Tes_Controller {
         	if($query_testuser->num_rows()>0){
         		$query_testuser = $query_testuser->row();
 
+        		// Security Hardening: IDOR / BOLA Prevention
+        		$username = $this->access_tes->get_username();
+        		$user_id = $this->cbt_user_model->get_by_kolom_limit('user_name', $username, 1)->row()->user_id;
+        		if ($query_testuser->tesuser_user_id != $user_id) {
+        			redirect('tes_dashboard');
+        			return;
+        		}
+
         		$query_test = $this->cbt_tes_model->get_by_kolom_limit('tes_id', $query_testuser->tesuser_tes_id, 1)->row();
         		$query_user = $this->cbt_user_model->get_by_kolom_limit('user_id', $query_testuser->tesuser_user_id, 1)->row();
 
@@ -57,6 +65,43 @@ class Tes_hasil_detail extends Tes_Controller {
     function get_datatable(){
 		// variable initialization
 		$tesuser_id = $this->input->get('tes_user_id');
+
+		if (empty($tesuser_id)) {
+			$output = array(
+				"sEcho" => isset($_GET['sEcho']) ? intval($_GET['sEcho']) : 0,
+				"iTotalRecords" => 0,
+				"iTotalDisplayRecords" => 0,
+				"aaData" => array()
+			);
+			echo json_encode($output);
+			return;
+		}
+
+		// Security Hardening: IDOR / BOLA Prevention
+		$query_testuser = $this->cbt_tes_user_model->get_by_kolom_limit('tesuser_id', $tesuser_id, 1);
+		if ($query_testuser->num_rows() == 0) {
+			$output = array(
+				"sEcho" => isset($_GET['sEcho']) ? intval($_GET['sEcho']) : 0,
+				"iTotalRecords" => 0,
+				"iTotalDisplayRecords" => 0,
+				"aaData" => array()
+			);
+			echo json_encode($output);
+			return;
+		}
+
+		$username = $this->access_tes->get_username();
+		$user_id = $this->cbt_user_model->get_by_kolom_limit('user_name', $username, 1)->row()->user_id;
+		if ($query_testuser->row()->tesuser_user_id != $user_id) {
+			$output = array(
+				"sEcho" => isset($_GET['sEcho']) ? intval($_GET['sEcho']) : 0,
+				"iTotalRecords" => 0,
+				"iTotalDisplayRecords" => 0,
+				"aaData" => array()
+			);
+			echo json_encode($output);
+			return;
+		}
 
 		$search = "";
 		$start = 0;

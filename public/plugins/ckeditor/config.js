@@ -22,6 +22,6 @@ CKEDITOR.editorConfig = function( config ) {
 	];
 	
 	config.startupFocus = true;
-	config.removePlugins = 'image,horizontalrule';
-	config.extraPlugins = 'pastebase64,imageku,imageresizerowandcolumn,justify';
+	config.removePlugins = 'image,horizontalrule,wsc,scayt,tableselection,justify';
+	config.extraPlugins = 'pastebase64,imageku,imageresizerowandcolumn';
 };

@@ -8,6 +8,34 @@
 class Cbt_user_model extends CI_Model{
 	public $table = 'cbt_user';
 	
+	function __construct(){
+		parent::__construct();
+		$this->load->library('encryption');
+		
+		// Run password migration once
+		$this->db->where('konfigurasi_kode', 'cbt_pwd_migrated');
+		$check = $this->db->get('cbt_konfigurasi');
+		if ($check->num_rows() == 0) {
+			$query = $this->db->get($this->table);
+			if ($query->num_rows() > 0) {
+				foreach ($query->result() as $row) {
+					// Check if password is not encrypted
+					$decrypted = $this->encryption->decrypt($row->user_password);
+					if ($decrypted === FALSE) {
+						$encrypted = $this->encryption->encrypt($row->user_password);
+						$this->db->where('user_id', $row->user_id)
+						         ->update($this->table, array('user_password' => $encrypted));
+					}
+				}
+			}
+			$this->db->insert('cbt_konfigurasi', array(
+				'konfigurasi_kode' => 'cbt_pwd_migrated',
+				'konfigurasi_isi' => '1',
+				'konfigurasi_keterangan' => 'Status migrasi enkripsi password peserta'
+			));
+		}
+	}
+	
     function save($data){
         $this->db->insert($this->table, $data);
     }

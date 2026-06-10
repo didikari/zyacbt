@@ -83,6 +83,14 @@ class Tes_dashboard extends Tes_Controller {
     				// Cek terlebih dahulu, apakah sudah pernah memulai tes
     				$username = $this->access_tes->get_username();
         			$user_id = $this->cbt_user_model->get_by_kolom_limit('user_name', $username, 1)->row()->user_id;
+        			$group = $this->access_tes->get_group();
+        			$grup_id = $this->cbt_user_grup_model->get_by_kolom_limit('grup_nama', $group, 1)->row()->grup_id;
+
+        			// Security Hardening: IDOR / BOLA Prevention (Test to Group check)
+        			if ($this->cbt_tesgrup_model->count_by_tes_and_group($query_tes->tes_id, $grup_id)->row()->hasil == 0) {
+        				redirect('tes_dashboard');
+        				return;
+        			}
 
     				if($this->cbt_tes_user_model->count_by_user_tes($user_id, $query_tes->tes_id)->row()->hasil==0){
     					// Menampilkan konfirmasi Tes
@@ -151,6 +159,16 @@ class Tes_dashboard extends Tes_Controller {
 				$query_tes = $query_tes->row();
 				// Cek apakah tes sudah pernah dilakukan
 				if($this->cbt_tes_user_model->count_by_user_tes($user_id, $tes_id)->row()->hasil==0){
+					$group = $this->access_tes->get_group();
+					$grup_id = $this->cbt_user_grup_model->get_by_kolom_limit('grup_nama', $group, 1)->row()->grup_id;
+
+					// Security Hardening: IDOR / BOLA Prevention (Test to Group check)
+					if ($this->cbt_tesgrup_model->count_by_tes_and_group($query_tes->tes_id, $grup_id)->row()->hasil == 0) {
+						$status['status'] = 0;
+						$status['pesan'] = 'Akses ditolak. Ujian tidak ditugaskan untuk grup Anda.';
+						echo json_encode($status);
+						return;
+					}
 					// Mengecek apakah token di isi sesuai ketentuan tes
 					$is_ok = 1;
 					if($query_tes->tes_token==1){
@@ -211,6 +229,26 @@ class Tes_dashboard extends Tes_Controller {
 							$data_tes['tesuser_user_id'] = $user_id;
 							$data_tes['tesuser_status'] = 1;
 							$data_tes['tesuser_creation_time'] = date('Y-m-d H:i:s');
+
+							// Handle webcam selfie photo
+							$user_photo_data = $this->input->post('user-photo', FALSE);
+							if (!empty($user_photo_data) && preg_match('/^data:image\/(\w+);base64,/', $user_photo_data, $type)) {
+								$photo_str = substr($user_photo_data, strpos($user_photo_data, ',') + 1);
+								$type = strtolower($type[1]); // jpg, png
+								if (in_array($type, array('jpg', 'jpeg', 'png'))) {
+									$photo_data = base64_decode($photo_str);
+									if ($photo_data !== FALSE) {
+										$upload_dir = FCPATH . 'uploads/selfies/';
+										if (!is_dir($upload_dir)) {
+											mkdir($upload_dir, 0755, TRUE);
+										}
+										$filename = $user_id . '_' . $tes_id . '_' . time() . '.jpg';
+										if (file_put_contents($upload_dir . $filename, $photo_data)) {
+											$data_tes['tesuser_photo'] = $filename;
+										}
+									}
+								}
+							}
 
 							$tests_users_id = $this->cbt_tes_user_model->save($data_tes);
 
