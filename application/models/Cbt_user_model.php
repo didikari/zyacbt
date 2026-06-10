@@ -12,6 +12,25 @@ class Cbt_user_model extends CI_Model{
 		parent::__construct();
 		$this->load->library('encryption');
 		
+		// Database Auto-Migration for user_login and user_login_date columns
+		if (!$this->db->field_exists('user_login', $this->table)) {
+			$this->load->dbforge();
+			$fields = array(
+				'user_login' => array(
+					'type' => 'INT',
+					'constraint' => '11',
+					'null' => FALSE,
+					'default' => '0'
+				),
+				'user_login_date' => array(
+					'type' => 'DATE',
+					'null' => TRUE,
+					'default' => NULL
+				)
+			);
+			$this->dbforge->add_column($this->table, $fields);
+		}
+		
 		// Run password migration once
 		$this->db->where('konfigurasi_kode', 'cbt_pwd_migrated');
 		$check = $this->db->get('cbt_konfigurasi');
