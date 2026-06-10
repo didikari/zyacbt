@@ -108,9 +108,140 @@
 
     </form>
     </div>
+
+    <!-- Anti-Cheat Overlay -->
+    <div id="cheat-overlay" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 17, 23, 0.95); z-index: 9999999; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex;">
+        <div style="background: rgba(30, 41, 59, 0.7); padding: 40px 30px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); max-width: 520px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <div style="font-size: 64px; color: #ef4444; margin-bottom: 20px; animation: pulse 2s infinite;">
+                <i class="fa fa-exclamation-triangle"></i>
+            </div>
+            <h2 style="font-size: 26px; font-weight: 700; margin: 0 0 12px 0; color: #fff; letter-spacing: -0.5px;">Mode Ujian Wajib Layar Penuh</h2>
+            <p style="font-size: 15px; color: #94a3b8; line-height: 1.6; margin: 0 0 30px 0;">
+                Untuk menjaga integritas dan keamanan ujian, Anda diwajibkan mengerjakan soal dalam mode layar penuh (fullscreen). Menolak atau keluar dari mode ini akan dicatat sebagai pelanggaran.
+            </p>
+            <button onclick="requestFullscreenMode()" style="background: #10b981; color: #fff; border: none; padding: 14px 32px; font-size: 16px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); outline: none;">
+                <i class="fa fa-arrows-alt"></i> &nbsp; Masuk Layar Penuh & Lanjutkan Ujian
+            </button>
+        </div>
+    </div>
+    <style>
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        #cheat-overlay button:hover {
+            background: #059669 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6) !important;
+        }
+        #cheat-overlay button:active {
+            transform: translateY(1px);
+        }
+    </style>
 </div><!-- /.container -->
 
 <script type="text/javascript">
+    function isFullscreen() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+    }
+
+    function requestFullscreenMode() {
+        var element = document.documentElement;
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        } else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+        } else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
+    }
+
+    function force_hentikan_tes() {
+        var testId = $('#tes-id').val();
+        var testUserId = $('#tes-user-id').val();
+        var storageKey = 'cbt_warning_count_' + testUserId;
+        
+        localStorage.removeItem(storageKey);
+        $("#modal-proses").modal('show');
+        
+        $.getJSON('<?php echo site_url().'/'.$url; ?>/get_tes_info/' + testId, function(data) {
+            if (data.data == 1) {
+                $('#hentikan-tes-id').val(data.tes_id);
+                $('#hentikan-tes-user-id').val(data.tes_user_id);
+                $('#hentikan-tes-nama').val(data.tes_nama);
+                $('#hentikan-centang').prop("checked", true);
+                
+                $.ajax({
+                    url: "<?php echo site_url().'/'.$url; ?>/hentikan_tes",
+                    type: "POST",
+                    data: $('#form-hentikan').serialize(),
+                    cache: false,
+                    timeout: 10000,
+                    success: function(respon) {
+                        var obj = $.parseJSON(respon);
+                        $("#modal-proses").modal('hide');
+                        alert("Ujian Anda telah dihentikan secara otomatis oleh sistem karena terdeteksi melakukan kecurangan (pindah tab/aplikasi/keluar fullscreen sebanyak 3 kali).");
+                        window.location.reload();
+                    },
+                    error: function() {
+                        $("#modal-proses").modal('hide');
+                        window.location.reload();
+                    }
+                });
+            } else {
+                $("#modal-proses").modal('hide');
+                window.location.reload();
+            }
+        });
+    }
+
+    var lastViolationTime = 0;
+    function recordViolation(reason) {
+        var now = Date.now();
+        if (now - lastViolationTime < 1000) {
+            return;
+        }
+        lastViolationTime = now;
+        
+        var testUserId = $('#tes-user-id').val();
+        var storageKey = 'cbt_warning_count_' + testUserId;
+        var count = parseInt(localStorage.getItem(storageKey) || '0') + 1;
+        localStorage.setItem(storageKey, count);
+        
+        if (count >= 3) {
+            force_hentikan_tes();
+        } else {
+            alert("Peringatan Kecurangan!\n\nAnda terdeteksi " + reason + ".\nPelanggaran: " + count + "/3.\nJika mencapai 3 kali, ujian akan dihentikan secara otomatis.");
+        }
+    }
+
+    window.cbt_initialized = false;
+
+    function handleFullscreenChange() {
+        if (isFullscreen()) {
+            $('#cheat-overlay').fadeOut();
+            if (!window.cbt_initialized) {
+                window.cbt_initialized = true;
+            }
+        } else {
+            $('#cheat-overlay').fadeIn();
+            if (window.cbt_initialized) {
+                recordViolation("keluar dari mode layar penuh (fullscreen)");
+            }
+        }
+    }
+
+    $(document).on('fullscreenchange webkitfullscreenchange mozfullscreenchange MSFullscreenChange', handleFullscreenChange);
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            if (window.cbt_initialized) {
+                recordViolation("berpindah tab atau keluar dari browser");
+            }
+        }
+    });
     function zoombesar(){
         $('#isi-tes-soal').css("font-size", "140%");
         $('#isi-tes-soal').css("line-height", "140%");
@@ -345,6 +476,8 @@
             $("#sisa-waktu").html("Sisa Waktu : "+sisa_menit+" menit");
 
             if(sisa_detik<1){
+                var testUserId = $('#tes-user-id').val();
+                localStorage.removeItem('cbt_warning_count_' + testUserId);
                 window.location.reload();
             }
         }, 1000);
@@ -380,6 +513,8 @@
                             $('#btn-soal-'+obj.nomor_soal).removeClass('btn-warning');
                             $('#btn-soal-'+obj.nomor_soal).addClass('btn-primary');
                         }else if(obj.status==2){
+                            var testUserId = $('#tes-user-id').val();
+                            localStorage.removeItem('cbt_warning_count_' + testUserId);
                             window.location.reload();
                         }else{
                             $("#modal-proses").modal('hide');
@@ -413,6 +548,8 @@
                     success:function(respon){
                         var obj = $.parseJSON(respon);
                         if(obj.status==1){
+                            var testUserId = $('#tes-user-id').val();
+                            localStorage.removeItem('cbt_warning_count_' + testUserId);
                             window.location.reload();
                         }else{
                             $("#modal-proses").modal('hide');
@@ -433,7 +570,12 @@
         });
 
         $( document ).ready(function() {
-            
+            if (!isFullscreen()) {
+                $('#cheat-overlay').show();
+            } else {
+                $('#cheat-overlay').hide();
+                window.cbt_initialized = true;
+            }
         });
     });
 </script>
