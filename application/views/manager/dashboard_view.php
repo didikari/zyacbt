@@ -11,6 +11,88 @@
 
 <!-- Main content -->
 <section class="content">
+    <!-- Info boxes -->
+    <div class="row">
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <a href="<?php echo site_url(); ?>/manager/peserta_daftar" style="color: inherit; display: block; text-decoration: none;">
+                <div class="info-box" style="cursor: pointer;">
+                    <span class="info-box-icon bg-aqua"><i class="fa fa-users"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Peserta</span>
+                        <span class="info-box-number"><?php echo $total_siswa; ?></span>
+                    </div><!-- /.info-box-content -->
+                </div><!-- /.info-box -->
+            </a>
+        </div><!-- /.col -->
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <a href="<?php echo site_url(); ?>/manager/tes_daftar" style="color: inherit; display: block; text-decoration: none;">
+                <div class="info-box" style="cursor: pointer;">
+                    <span class="info-box-icon bg-green"><i class="fa fa-file-text-o"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Ujian</span>
+                        <span class="info-box-number"><?php echo $total_ujian; ?></span>
+                    </div><!-- /.info-box-content -->
+                </div><!-- /.info-box -->
+            </a>
+        </div><!-- /.col -->
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <a href="<?php echo site_url(); ?>/manager/modul_soal" style="color: inherit; display: block; text-decoration: none;">
+                <div class="info-box" style="cursor: pointer;">
+                    <span class="info-box-icon bg-yellow"><i class="fa fa-question-circle"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Soal</span>
+                        <span class="info-box-number"><?php echo $total_soal; ?></span>
+                    </div><!-- /.info-box-content -->
+                </div><!-- /.info-box -->
+            </a>
+        </div><!-- /.col -->
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <a href="<?php echo site_url(); ?>/manager/tes_hasil" style="color: inherit; display: block; text-decoration: none;">
+                <div class="info-box" style="cursor: pointer;">
+                    <span class="info-box-icon bg-red"><i class="fa fa-history"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Log Aktivitas</span>
+                        <span class="info-box-number"><?php echo $total_log; ?></span>
+                    </div><!-- /.info-box-content -->
+                </div><!-- /.info-box -->
+            </a>
+        </div><!-- /.col -->
+    </div><!-- /.row -->
+
+    <!-- Charts Row -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="box box-info">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Partisipasi Ujian (Top 10)</h3>
+                    <div class="box-tools pull-right">
+                        <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div class="chart-container" style="position: relative; height:250px;">
+                        <canvas id="partisipasiChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="box box-danger">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Tren Aktivitas Ujian (7 Hari Terakhir)</h3>
+                    <div class="box-tools pull-right">
+                        <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div class="chart-container" style="position: relative; height:250px;">
+                        <canvas id="aktivitasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="box box-default collapsed-box">
         <div class="box-header with-border">
             <h3 class="box-title">Tribute</h3>
@@ -147,3 +229,77 @@
         </div><!-- /.box-body -->
     </div><!-- /.box -->
 </section><!-- /.content -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(function() {
+    var rawLabels = <?php echo $partisipasi_labels; ?>;
+    var rawData = <?php echo $partisipasi_data; ?>;
+    
+    var ctx1 = document.getElementById('partisipasiChart').getContext('2d');
+    
+    if (rawLabels.length === 0) {
+        // Render a centered text info inside the canvas if no exams are registered yet
+        ctx1.font = "14px sans-serif";
+        ctx1.fillStyle = "#999";
+        ctx1.textAlign = "center";
+        ctx1.textBaseline = "middle";
+        ctx1.fillText("Belum ada data partisipasi ujian", ctx1.canvas.width / 2, ctx1.canvas.height / 2);
+    } else {
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: rawLabels,
+                datasets: [{
+                    label: 'Jumlah Peserta',
+                    data: rawData,
+                    backgroundColor: 'rgba(60,141,188,0.7)',
+                    borderColor: 'rgba(60,141,188,1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    var ctx2 = document.getElementById('aktivitasChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: <?php echo $aktivitas_labels; ?>,
+            datasets: [{
+                label: 'Aktivitas Ujian',
+                data: <?php echo $aktivitas_data; ?>,
+                backgroundColor: 'rgba(221,75,57,0.1)',
+                borderColor: 'rgba(221,75,57,1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+});
+</script>

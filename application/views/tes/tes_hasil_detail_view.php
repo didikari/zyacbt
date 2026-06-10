@@ -97,6 +97,11 @@
                 <div class="box-header with-border">
                     <div class="box-title">Audit Trail / Log Aktivitas Ujian</div>
                     <div class="box-tools pull-right">
+                        <div style="display: inline-block; margin-right: 20px;">
+                            <label style="font-weight: normal; cursor: pointer;">
+                                <input type="checkbox" id="auto-refresh-log" style="vertical-align: middle; margin-top: -3px;"> &nbsp;Auto-Refresh (10s)
+                            </label>
+                        </div>
                         <a href="#" onclick="refresh_log_table()">Refresh Log</a>
                     </div>
                 </div><!-- /.box-header -->
@@ -180,6 +185,20 @@
                   }
          });
 		 
+         var autoRefreshLogInterval = null;
+         $('#auto-refresh-log').change(function() {
+             if (this.checked) {
+                 autoRefreshLogInterval = setInterval(function() {
+                     refresh_log_table();
+                 }, 10000);
+             } else {
+                 if (autoRefreshLogInterval) {
+                     clearInterval(autoRefreshLogInterval);
+                     autoRefreshLogInterval = null;
+                 }
+             }
+         });
+
 		$( document ).ready(function() {
 			
 		});

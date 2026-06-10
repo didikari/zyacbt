@@ -27,6 +27,55 @@ class Dashboard extends Member_Controller {
         	$data['dir_uploads'] = 'Writeable';
         }
 
+        // 1. Total Counts for InfoBoxes
+        $data['total_siswa'] = $this->db->count_all('cbt_user');
+        $data['total_ujian'] = $this->db->count_all('cbt_tes');
+        $data['total_soal'] = $this->db->count_all('cbt_soal');
+        $data['total_log'] = $this->db->count_all('cbt_tes_user_log');
+
+        // 2. Query Exam Participation (Top 10)
+        $q_partisipasi = $this->db->query("
+            SELECT t.tes_nama, COUNT(tu.tesuser_id) AS total 
+            FROM cbt_tes t 
+            LEFT JOIN cbt_tes_user tu ON t.tes_id = tu.tesuser_tes_id 
+            GROUP BY t.tes_id 
+            ORDER BY total DESC 
+            LIMIT 10
+        ");
+        $partisipasi_labels = array();
+        $partisipasi_data = array();
+        foreach ($q_partisipasi->result() as $row) {
+            $partisipasi_labels[] = $row->tes_nama;
+            $partisipasi_data[] = (int)$row->total;
+        }
+
+        // 3. Query Daily Exam Activity Trend (Last 7 Days)
+        $aktivitas_labels = array();
+        $aktivitas_data = array();
+        for ($i = 6; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $formatted_date = date('d M', strtotime($date));
+            $aktivitas_labels[$date] = $formatted_date;
+            $aktivitas_data[$date] = 0;
+        }
+        
+        $q_aktivitas = $this->db->query("
+            SELECT DATE(tesslog_time) AS tanggal, COUNT(*) AS total
+            FROM cbt_tes_user_log
+            WHERE tesslog_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            GROUP BY DATE(tesslog_time)
+        ");
+        foreach ($q_aktivitas->result() as $row) {
+            if (isset($aktivitas_data[$row->tanggal])) {
+                $aktivitas_data[$row->tanggal] = (int)$row->total;
+            }
+        }
+
+        $data['partisipasi_labels'] = json_encode($partisipasi_labels);
+        $data['partisipasi_data'] = json_encode($partisipasi_data);
+        $data['aktivitas_labels'] = json_encode(array_values($aktivitas_labels));
+        $data['aktivitas_data'] = json_encode(array_values($aktivitas_data));
+
         $this->template->display_admin('manager/dashboard_view', 'Dashboard', $data);
     }
 	
