@@ -8,6 +8,23 @@
 class Cbt_tes_user_model extends CI_Model{
 	public $table = 'cbt_tes_user';
 	
+	function __construct(){
+		parent::__construct();
+		// Database Auto-Migration for tesuser_photo column
+		if (!$this->db->field_exists('tesuser_photo', $this->table)) {
+			$this->load->dbforge();
+			$fields = array(
+				'tesuser_photo' => array(
+					'type' => 'VARCHAR',
+					'constraint' => '255',
+					'null' => TRUE,
+					'default' => NULL
+				)
+			);
+			$this->dbforge->add_column($this->table, $fields);
+		}
+	}
+	
 	
     function save($data){
         $this->db->insert($this->table, $data);

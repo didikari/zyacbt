@@ -51,6 +51,19 @@
                         </tr>
                         <?php if(!empty($tes_token)){ echo $tes_token; } ?>
                   </table>
+                  
+                  <div class="well text-center" style="margin-top: 15px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+                        <h4 style="margin-top: 0; margin-bottom: 15px;"><i class="fa fa-camera"></i> Verifikasi Foto Kehadiran (Selfie)</h4>
+                        <div style="position: relative; display: inline-block; margin-bottom: 10px;">
+                            <video id="webcam-preview" autoplay playsinline width="320" height="240" style="background: #333; border: 2px solid #ccc; border-radius: 4px; display: inline-block;"></video>
+                            <canvas id="photo-canvas" width="320" height="240" style="display: none; border: 2px solid #00a65a; border-radius: 4px;"></canvas>
+                        </div>
+                        <br/>
+                        <button type="button" class="btn btn-info" id="btn-capture-photo"><i class="fa fa-circle"></i> Ambil Foto</button>
+                        <button type="button" class="btn btn-warning" id="btn-retake-photo" style="display: none;"><i class="fa fa-refresh"></i> Ulangi Foto</button>
+                        <input type="hidden" name="user-photo" id="user-photo" value="">
+                        <div id="camera-status-msg" style="margin-top: 10px; font-weight: bold; color: #dd4b39;">Menginisialisasi kamera...</div>
+                  </div>
             </div><!-- /.box-body -->
             <div class="box-body">
                 <button type="submit" id="btn-tambah-simpan" class="btn btn-primary pull-right">Kerjakan</button>
@@ -62,7 +75,75 @@
 
 <script type="text/javascript">
     $(function () {
+        var webcamStream = null;
+        var video = document.getElementById('webcam-preview');
+        var canvas = document.getElementById('photo-canvas');
+        var captureBtn = document.getElementById('btn-capture-photo');
+        var retakeBtn = document.getElementById('btn-retake-photo');
+        var userPhotoInput = document.getElementById('user-photo');
+        var statusMsg = document.getElementById('camera-status-msg');
+        var submitBtn = document.getElementById('btn-tambah-simpan');
+
+        // Disable submit button initially
+        submitBtn.disabled = true;
+
+        // Start webcam stream if mediaDevices is supported (requires HTTPS or localhost)
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
+                .then(function(stream) {
+                    webcamStream = stream;
+                    video.srcObject = stream;
+                    statusMsg.innerHTML = '<span style="color: #f39c12;"><i class="fa fa-info-circle"></i> Kamera siap. Silakan klik "Ambil Foto".</span>';
+                })
+                .catch(function(err) {
+                    console.error("Webcam error: ", err);
+                    statusMsg.innerHTML = '<span style="color: #dd4b39;"><i class="fa fa-exclamation-triangle"></i> Kamera tidak terdeteksi atau izin ditolak. Mohon aktifkan kamera Anda untuk mengikuti ujian.</span>';
+                });
+        } else {
+            statusMsg.innerHTML = '<span style="color: #dd4b39;"><i class="fa fa-exclamation-triangle"></i> Akses kamera ditolak karena koneksi tidak aman. Ujian ini wajib menggunakan koneksi HTTPS atau localhost dengan kamera aktif.</span>';
+            submitBtn.disabled = true;
+        }
+
+        // Capture photo
+        $(captureBtn).click(function() {
+            if (webcamStream) {
+                var context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, 320, 240);
+                var dataURL = canvas.toDataURL('image/jpeg');
+                userPhotoInput.value = dataURL;
+
+                // Stop video stream preview
+                video.style.display = 'none';
+                canvas.style.display = 'inline-block';
+
+                captureBtn.style.display = 'none';
+                retakeBtn.style.display = 'inline-block';
+
+                statusMsg.innerHTML = '<span style="color: #00a65a;"><i class="fa fa-check-circle"></i> Foto berhasil diambil. Anda siap memulai ujian!</span>';
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Retake photo
+        $(retakeBtn).click(function() {
+            userPhotoInput.value = '';
+            canvas.style.display = 'none';
+            video.style.display = 'inline-block';
+
+            retakeBtn.style.display = 'none';
+            captureBtn.style.display = 'inline-block';
+
+            statusMsg.innerHTML = '<span style="color: #f39c12;"><i class="fa fa-info-circle"></i> Kamera aktif. Silakan klik "Ambil Foto".</span>';
+            submitBtn.disabled = true;
+        });
+
         $('#form-konfirmasi-tes').submit(function(){
+            // Stop webcam stream tracks if active
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(function(track) {
+                    track.stop();
+                });
+            }
             $("#modal-proses").modal('show');
             $.ajax({
                     url:"<?php echo site_url().'/'.$url; ?>/mulai_tes",

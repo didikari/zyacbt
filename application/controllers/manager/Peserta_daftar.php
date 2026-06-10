@@ -215,7 +215,7 @@ class Peserta_daftar extends Member_Controller {
             $record[] = $query_group->grup_nama;
 			$record[] = $temp->user_detail;
 
-            $record[] = '<a onclick="edit(\''.$temp->user_id.'\')" style="cursor: pointer;" class="btn btn-default btn-xs">Edit</a>';
+            $record[] = '<a onclick="edit(\''.$temp->user_id.'\')" style="cursor: pointer;" class="btn btn-default btn-xs">Edit</a>&nbsp;<a href="'.site_url('manager/peserta_daftar/login_as/'.$temp->user_id).'" target="_blank" class="btn btn-primary btn-xs"><i class="fa fa-sign-in"></i> Login As</a>';
             $record[] = '<input type="checkbox" name="edit-user-id['.$temp->user_id.']" >';
 
 			$output['aaData'][] = $record;
@@ -253,6 +253,40 @@ class Peserta_daftar extends Member_Controller {
 		}
 
 		return $rows;
+	}
+
+	function login_as($user_id=null){
+		if(!empty($user_id)){
+			$query_res = $this->cbt_user_model->get_by_kolom('user_id', $user_id);
+			if($query_res->num_rows()>0){
+				$result = $query_res->row();
+				
+				// Generate device signature for student session
+				$ip_address = $this->input->ip_address();
+				$user_agent = $this->input->user_agent();
+				$device_sig = md5($ip_address . '_' . $user_agent);
+				
+				$data_device['user_ip'] = $device_sig;
+				$this->cbt_user_model->update('user_name', $result->user_name, $data_device);
+				
+				// Set student session variables
+				$tanda = '@ZYACBT@';
+				$this->session->set_userdata('cbt_tes_tanda', $tanda.$result->user_name.$tanda);
+				$this->session->set_userdata('cbt_tes_user_id', $result->user_name);
+				$this->session->set_userdata('cbt_tes_nama', stripslashes($result->user_firstname));
+				
+				// Get group info
+				$this->load->model('cbt_user_grup_model');
+				$group = $this->cbt_user_grup_model->get_by_kolom_limit('grup_id', $result->user_grup_id, 1)->row();
+				$this->session->set_userdata('cbt_tes_group', $group->grup_nama);
+				$this->session->set_userdata('cbt_tes_group_id', $group->grup_id);
+				
+				// Redirect to student dashboard
+				redirect('tes_dashboard');
+				return;
+			}
+		}
+		redirect('manager/peserta_daftar');
 	}
 
 	function get_sort_dir() {

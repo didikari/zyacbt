@@ -44,6 +44,7 @@ class Tes_hasil_detail extends Member_Controller {
         		$data['tes_nama'] = $query_test->tes_nama;
         		$data['tes_mulai'] = $query_testuser->tesuser_creation_time;
         		$data['user_nama'] = $query_user->user_firstname;
+        		$data['tesuser_photo'] = !empty($query_testuser->tesuser_photo) ? $query_testuser->tesuser_photo : '';
 
         		$nilai = $this->cbt_tes_soal_model->get_nilai($tesuser_id)->row();
         		$data['nilai'] = $nilai->hasil.'  /  '.$query_test->tes_max_score.'  (nilai / nilai maksimal) ';
@@ -275,16 +276,26 @@ class Tes_hasil_detail extends Member_Controller {
 			$record = array();
             
 			$record[] = ++$i;
-			$record[] = $temp->tesslog_time;
-			$record[] = $temp->tesslog_action;
-			$record[] = $temp->tesslog_info;
-			$record[] = $temp->tesslog_ip;
-			$record[] = $temp->tesslog_ua;
+			$record[] = htmlspecialchars($temp->tesslog_time);
+			$record[] = htmlspecialchars($temp->tesslog_action);
+			$record[] = htmlspecialchars($temp->tesslog_info);
+			$record[] = htmlspecialchars($temp->tesslog_ip);
+			$record[] = htmlspecialchars($temp->tesslog_ua);
 
 			$output['aaData'][] = $record;
 		}
         
 		echo json_encode($output);
+	}
+
+	private function _escape_csv_cell($value) {
+		$value = (string) $value;
+		if (empty($value)) return $value;
+		$first_char = $value[0];
+		if (in_array($first_char, array('=', '+', '-', '@', "\r", "\n"))) {
+			return "'" . $value;
+		}
+		return $value;
 	}
 
 	function export_log($tesuser_id = null) {
@@ -318,24 +329,31 @@ class Tes_hasil_detail extends Member_Controller {
 		fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
 		// Write headers
-		fputcsv($output, array('Log Aktivitas Ujian'));
-		fputcsv($output, array('Nama Peserta', $query_user->user_firstname));
-		fputcsv($output, array('Nama Ujian', $query_test->tes_nama));
-		fputcsv($output, array('Waktu Mulai', $query_testuser->tesuser_creation_time));
+		fputcsv($output, array($this->_escape_csv_cell('Log Aktivitas Ujian')));
+		fputcsv($output, array($this->_escape_csv_cell('Nama Peserta'), $this->_escape_csv_cell($query_user->user_firstname)));
+		fputcsv($output, array($this->_escape_csv_cell('Nama Ujian'), $this->_escape_csv_cell($query_test->tes_nama)));
+		fputcsv($output, array($this->_escape_csv_cell('Waktu Mulai'), $this->_escape_csv_cell($query_testuser->tesuser_creation_time)));
 		fputcsv($output, array('')); // blank row
 		
-		fputcsv($output, array('No', 'Waktu', 'Aktivitas', 'Detail Informasi', 'IP Address', 'Browser / User-Agent'));
+		fputcsv($output, array(
+			$this->_escape_csv_cell('No'), 
+			$this->_escape_csv_cell('Waktu'), 
+			$this->_escape_csv_cell('Aktivitas'), 
+			$this->_escape_csv_cell('Detail Informasi'), 
+			$this->_escape_csv_cell('IP Address'), 
+			$this->_escape_csv_cell('Browser / User-Agent')
+		));
 
 		// Write data rows
 		$i = 1;
 		foreach ($query_logs as $log) {
 			fputcsv($output, array(
-				$i++,
-				$log->tesslog_time,
-				$log->tesslog_action,
-				$log->tesslog_info,
-				$log->tesslog_ip,
-				$log->tesslog_ua
+				$this->_escape_csv_cell($i++),
+				$this->_escape_csv_cell($log->tesslog_time),
+				$this->_escape_csv_cell($log->tesslog_action),
+				$this->_escape_csv_cell($log->tesslog_info),
+				$this->_escape_csv_cell($log->tesslog_ip),
+				$this->_escape_csv_cell($log->tesslog_ua)
 			));
 		}
 
