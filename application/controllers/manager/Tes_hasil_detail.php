@@ -23,6 +23,7 @@ class Tes_hasil_detail extends Member_Controller {
 		$this->load->model('cbt_jawaban_model');
 		$this->load->model('cbt_tes_soal_model');
 		$this->load->model('cbt_tes_soal_jawaban_model');
+		$this->load->model('cbt_tes_user_log_model');
 
 		parent::cek_akses($this->kode_menu);
 	}
@@ -241,5 +242,48 @@ class Tes_hasil_detail extends Member_Controller {
 		}
 
 		return $sort_dir;
+	}
+
+	function get_datatable_log(){
+		// variable initialization
+		$tesuser_id = $this->input->get('tes_user_id');
+
+		$start = 0;
+		$rows = 10;
+
+		// limit
+		$start = $this->get_start();
+		$rows = $this->get_rows();
+
+		// run query to get user listing
+		$query = $this->cbt_tes_user_log_model->get_datatable($start, $rows, $tesuser_id);
+		$iFilteredTotal = $query->num_rows();
+		
+		$iTotal = $this->cbt_tes_user_log_model->get_datatable_count($tesuser_id)->row()->hasil;
+	    
+		$output = array(
+			"sEcho" => intval($_GET['sEcho']),
+	        "iTotalRecords" => $iTotal,
+	        "iTotalDisplayRecords" => $iTotal,
+	        "aaData" => array()
+	    );
+
+	    // get result after running query and put it in array
+		$i = $start;
+		$query = $query->result();
+	    foreach ($query as $temp) {			
+			$record = array();
+            
+			$record[] = ++$i;
+			$record[] = $temp->tesslog_time;
+			$record[] = $temp->tesslog_action;
+			$record[] = $temp->tesslog_info;
+			$record[] = $temp->tesslog_ip;
+			$record[] = $temp->tesslog_ua;
+
+			$output['aaData'][] = $record;
+		}
+        
+		echo json_encode($output);
 	}
 }

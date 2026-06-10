@@ -91,6 +91,44 @@
         </div>
     </div>
 
+	<div class="row">
+        <div class="col-xs-12">
+            <div class="box box-primary">
+                <div class="box-header with-border">
+                    <div class="box-title">Audit Trail / Log Aktivitas Ujian</div>
+                    <div class="box-tools pull-right">
+                        <a href="#" onclick="refresh_log_table()">Refresh Log</a>
+                    </div>
+                </div><!-- /.box-header -->
+
+                <div class="box-body">
+                    <table id="table-log" class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Waktu</th>
+                                <th>Aktivitas</th>
+                                <th>Detail Informasi</th>
+                                <th>IP Address</th>
+                                <th>Browser / User-Agent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td> </td>
+                                <td> </td>
+                                <td> </td>
+                                <td> </td>
+                                <td> </td>
+                                <td> </td>
+                            </tr>
+                        </tbody>
+                    </table>                        
+                </div>
+            </div>
+        </div>
+    </div>
+
 </section><!-- /.content -->
 
 
@@ -98,6 +136,10 @@
 <script lang="javascript">
     function refresh_table(){
         $('#table-soal').dataTable().fnReloadAjax();
+    }
+    
+    function refresh_log_table(){
+        $('#table-log').dataTable().fnReloadAjax();
     }
 
     $(function(){
@@ -112,6 +154,26 @@
     					{"bSearchable": false, "bSortable": false, "sWidth":"80px"},
     					{"bSearchable": false, "bSortable": false}],
                   "sAjaxSource": "<?php echo site_url().'/'.$url; ?>/get_datatable/",
+                  "autoWidth": false,
+                  "fnServerParams": function ( aoData ) {
+                    aoData.push( { "name": "tes_user_id", "value": $('#tes-user-id').val()} );
+                  }
+         });
+
+        $('#table-log').DataTable({
+                  "paging": true,
+                  "iDisplayLength":10,
+                  "bProcessing": false,
+                  "bServerSide": true, 
+                  "searching": false,
+                  "aoColumns": [
+    					{"bSearchable": false, "bSortable": false, "sWidth":"20px"},
+    					{"bSearchable": false, "bSortable": false, "sWidth":"130px"},
+    					{"bSearchable": false, "bSortable": false, "sWidth":"140px"},
+    					{"bSearchable": false, "bSortable": false},
+    					{"bSearchable": false, "bSortable": false, "sWidth":"100px"},
+    					{"bSearchable": false, "bSortable": false, "sWidth":"200px"}],
+                  "sAjaxSource": "<?php echo site_url().'/'.$url; ?>/get_datatable_log/",
                   "autoWidth": false,
                   "fnServerParams": function ( aoData ) {
                     aoData.push( { "name": "tes_user_id", "value": $('#tes-user-id').val()} );

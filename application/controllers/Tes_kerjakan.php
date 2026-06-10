@@ -24,6 +24,7 @@ class Tes_kerjakan extends Tes_Controller {
 		$this->load->model('cbt_jawaban_model');
 		$this->load->model('cbt_tes_soal_model');
 		$this->load->model('cbt_tes_soal_jawaban_model');
+		$this->load->model('cbt_tes_user_log_model');
 
         $this->username = $this->access_tes->get_username();
         $this->user_id = $this->cbt_user_model->get_by_kolom_limit('user_name', $this->username, 1)->row()->user_id;
@@ -109,6 +110,8 @@ class Tes_kerjakan extends Tes_Controller {
 						$data['tes_soal_id'] = $tessoal->tessoal_id;
 						$data['tes_soal_nomor'] = $tessoal->tessoal_order;
 
+						// Record log for opening/loading exam sheet
+						$this->cbt_tes_user_log_model->insert_log($query_tes->tesuser_id, 'Memuat lembar ujian', 'Mengakses halaman tes ' . $query_tes->tes_nama);
 						
 						$this->template->display_tes($this->kelompok.'/tes_kerjakan_view', 'Kerjakan Tes', $data);
 					}
@@ -199,6 +202,9 @@ class Tes_kerjakan extends Tes_Controller {
                 $data_tes['tesuser_status']=4;
                 $this->cbt_tes_user_model->update('tesuser_id', $tesuser_id, $data_tes);
 
+                // Record log for normal test submission (stopping test)
+                $this->cbt_tes_user_log_model->insert_log($tesuser_id, 'Menghentikan tes', 'Siswa menyelesaikan ujian secara sukarela');
+
                 $status['status'] = 1;
                 $status['pesan'] = "Tes berhasil dihentikan";   
             }else{
@@ -277,6 +283,13 @@ class Tes_kerjakan extends Tes_Controller {
 
                         $this->cbt_tes_soal_model->update('tessoal_id', $tes_soal_id, $data_tes_soal);
 
+                        // Record log for Multiple Choice answer saving
+                        $jawaban_text = strip_tags($query_jawaban->jawaban_detail);
+                        if(strlen($jawaban_text) > 60) {
+                            $jawaban_text = substr($jawaban_text, 0, 60) . '...';
+                        }
+                        $this->cbt_tes_user_log_model->insert_log($tes_user_id, 'Menyimpan jawaban', 'Menjawab soal PG nomor ' . $tes_soal_nomor . ' dengan: ' . $jawaban_text);
+
                         $status['status'] = 1;
                         $status['nomor_soal'] = $tes_soal_nomor;
                         $status['pesan'] = 'Jawaban yang dipilih berhasil disimpan';
@@ -286,6 +299,13 @@ class Tes_kerjakan extends Tes_Controller {
                         $data_tes_soal['tessoal_jawaban_text'] = $jawaban;
                         $data_tes_soal['tessoal_nilai'] = 0;
                         $this->cbt_tes_soal_model->update('tessoal_id', $tes_soal_id, $data_tes_soal);
+
+                        // Record log for Essay answer saving
+                        $essay_text = strip_tags($jawaban);
+                        if(strlen($essay_text) > 60) {
+                            $essay_text = substr($essay_text, 0, 60) . '...';
+                        }
+                        $this->cbt_tes_user_log_model->insert_log($tes_user_id, 'Menyimpan jawaban', 'Menjawab soal essay nomor ' . $tes_soal_nomor . ' dengan: ' . $essay_text);
 
                         $status['status'] = 1;
                         $status['nomor_soal'] = $tes_soal_nomor;
@@ -302,6 +322,13 @@ class Tes_kerjakan extends Tes_Controller {
                             $data_tes_soal['tessoal_nilai'] = $query_tes->tes_score_wrong;
                         }
                         $this->cbt_tes_soal_model->update('tessoal_id', $tes_soal_id, $data_tes_soal);
+
+                        // Record log for Short Answer answer saving
+                        $short_text = strip_tags($jawaban);
+                        if(strlen($short_text) > 60) {
+                            $short_text = substr($short_text, 0, 60) . '...';
+                        }
+                        $this->cbt_tes_user_log_model->insert_log($tes_user_id, 'Menyimpan jawaban', 'Menjawab soal jawaban singkat nomor ' . $tes_soal_nomor . ' dengan: ' . $short_text);
 
                         $status['status'] = 1;
                         $status['nomor_soal'] = $tes_soal_nomor;
@@ -388,6 +415,16 @@ class Tes_kerjakan extends Tes_Controller {
             }
 
             $this->cbt_tes_soal_model->update('tessoal_id', $tessoal_id, $data_tes_soal);
+
+            // Record log for doubt/ragu status changes
+            $query_tessoal = $this->cbt_tes_soal_model->get_by_kolom_limit('tessoal_id', $tessoal_id, 1);
+            if ($query_tessoal->num_rows() > 0) {
+                $row_tessoal = $query_tessoal->row();
+                $tesuser_id = $row_tessoal->tessoal_tesuser_id;
+                $nomor = $row_tessoal->tessoal_order;
+                $status_ragu = (!empty($ragu) && $ragu == 1) ? 'Menandai ragu-ragu' : 'Menghilangkan status ragu-ragu';
+                $this->cbt_tes_user_log_model->insert_log($tesuser_id, 'Mengubah status ragu', $status_ragu . ' pada soal nomor ' . $nomor);
+            }
         }
 
         echo json_encode($data);
@@ -406,6 +443,9 @@ class Tes_kerjakan extends Tes_Controller {
                 $data['tes_ragu'] = $data_soal['tes_ragu'];
                 $data['tes_soal_id'] = $data_soal['tes_soal_id'];
                 $data['tes_soal_nomor'] = $data_soal['tes_soal_nomor'];
+
+                // Record log for opening question
+                $this->cbt_tes_user_log_model->insert_log($tesuser_id, 'Membuka soal', 'Membuka soal nomor ' . $data_soal['tes_soal_nomor']);
             }
         }
 
@@ -621,6 +661,9 @@ class Tes_kerjakan extends Tes_Controller {
             $data_tes['tesuser_comment'] = $violation_count;
             $this->cbt_tes_user_model->update('tesuser_id', $tesuser_id, $data_tes);
             
+            // Record log for anti-cheat warning violation
+            $this->cbt_tes_user_log_model->insert_log($tesuser_id, 'Peringatan kecurangan', 'Siswa terdeteksi keluar dari layar ujian. Total pelanggaran: ' . $violation_count);
+
             $status['status'] = 1;
             $status['pesan'] = "Pelanggaran berhasil dicatat";
         }else{
