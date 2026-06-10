@@ -28,7 +28,7 @@ class Peserta_import extends Member_Controller {
 
         if(!empty($_FILES['userfile']['name'])){
 			$config['upload_path'] = './public/uploads/';
-	        $config['allowed_types'] = 'xlsx';
+	        $config['allowed_types'] = 'xlsx|xls';
 	        $config['max_size']	= '0';
 	        $config['overwrite'] = true;
 	        $config['file_name'] = $_FILES['userfile']['name'];
