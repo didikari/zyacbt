@@ -30,6 +30,15 @@ class Cbt_user_model extends CI_Model{
 			);
 			$this->dbforge->add_column($this->table, $fields);
 		}
+
+		// Database Auto-Migration: Modify konfigurasi_isi to TEXT to prevent text truncation
+		$query_field = $this->db->query("SHOW COLUMNS FROM cbt_konfigurasi LIKE 'konfigurasi_isi'");
+		if ($query_field->num_rows() > 0) {
+			$field_info = $query_field->row();
+			if (stripos($field_info->Type, 'varchar') !== FALSE) {
+				$this->db->query("ALTER TABLE cbt_konfigurasi MODIFY COLUMN konfigurasi_isi TEXT NOT NULL");
+			}
+		}
 		
 		// Run password migration once
 		$this->db->where('konfigurasi_kode', 'cbt_pwd_migrated');
