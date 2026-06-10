@@ -90,3 +90,13 @@ Setelah instalasi selesai, buka browser Anda dan akses alamat berikut:
 - **Exam Browser Lock:** Fitur penguncian browser mobile (Exam Browser/Xambro) agar peserta tidak bisa keluar dari aplikasi ujian.
 - **Manajemen Kartu Ujian:** Generate dan cetak kartu ujian peserta secara otomatis langsung dari dasbor admin.
 - **Keamanan Terkini:** Menggunakan Bcrypt hashing untuk akun admin, enkripsi simetris (AES-256) untuk password peserta, penanganan cookies aman (HttpOnly), serta pencegahan SQL Injection dengan Query Bindings.
+
+---
+
+## Sumber Asli & Kredit
+
+Aplikasi ini dikembangkan asli oleh:
+- **Pengembang:** Achmad Lutfi
+- **Situs/Blog:** [achmadlutfi.wordpress.com](https://achmadlutfi.wordpress.com/)
+- **Kontak/Email:** achmdlutfi@gmail.com
+
