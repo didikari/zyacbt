@@ -31,7 +31,7 @@ $config['site_version'] = '2025.12.25';
 // $config['base_url'] = "http://".$_SERVER['HTTP_HOST'].str_replace(basename($_SERVER['SCRIPT_NAME']),"",$_SERVER['SCRIPT_NAME']);
 $root=(isset($_SERVER['HTTPS']) ? "https://" : "http://").$_SERVER['HTTP_HOST'];
 $root.= str_replace(basename($_SERVER['SCRIPT_NAME']), '', $_SERVER['SCRIPT_NAME']);
-$config['base_url'] = $root;
+$config['base_url'] = getenv('BASE_URL') ?: $root;
 
 /*
 |--------------------------------------------------------------------------
@@ -332,7 +332,7 @@ $config['cache_query_string'] = FALSE;
 | https://codeigniter.com/user_guide/libraries/encryption.html
 |
 */
-$config['encryption_key'] = 'sdjs djhas dhkajshdfsdfsKJKAhsa ahdsa d*&^876ad a7dud kahdkjas dias76dkashd sd dkfsdfsdfsdfsdjashdja shdkjhKJHSKjd s8d9789sd sd';
+$config['encryption_key'] = getenv('ENCRYPTION_KEY') ?: 'sdjs djhas dhkajshdfsdfsKJKAhsa ahdsa d*&^876ad a7dud kahdkjas dias76dkashd sd dkfsdfsdfsdfsdjashdja shdkjhKJHSKjd s8d9789sd sd';
 
 /*
 |--------------------------------------------------------------------------
