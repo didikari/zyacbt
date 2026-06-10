@@ -30,16 +30,30 @@
                     </div>
                 </div><!-- /.box-header -->
                 <div class="box-body">
+                    <style>
+                        #isi-tes-soal {
+                            -webkit-user-select: none;
+                            -moz-user-select: none;
+                            -ms-user-select: none;
+                            user-select: none;
+                        }
+                        #isi-tes-soal textarea, #isi-tes-soal input[type="text"] {
+                            -webkit-user-select: text;
+                            -moz-user-select: text;
+                            -ms-user-select: text;
+                            user-select: text;
+                        }
+                    </style>
                     <div id="isi-tes-soal" style="font-size: 15px;">
                         <?php if(!empty($tes_soal)){ echo $tes_soal; } ?>
                     </div>
                 </div><!-- /.box-body -->
                 <div class="box-footer">
-                    <button type="button" class="btn btn-default hide" id="btn-sebelumnya">Soal Sebelumnya</button>&nbsp;&nbsp;&nbsp;
+                    <button type="button" class="btn btn-default <?php if(!empty($tes_soal_nomor) && $tes_soal_nomor==1){ echo "hide"; } ?>" id="btn-sebelumnya">Soal Sebelumnya</button>&nbsp;&nbsp;&nbsp;
                     <div class="btn btn-warning" id="btn-ragu" onclick="ragu()">
                         <input type="checkbox" style="width:10px;height:10px;" name="btn-ragu-checkbox" id="btn-ragu-checkbox" <?php if(!empty($tes_ragu)){ echo "checked"; } ?> /> Ragu-ragu
                     </div>&nbsp;&nbsp;&nbsp;
-                    <button type="button" class="btn btn-default" id="btn-selanjutnya">Soal Selanjutnya</button>
+                    <button type="button" class="btn btn-default <?php if(!empty($tes_soal_nomor) && !empty($tes_soal_jml) && $tes_soal_nomor==$tes_soal_jml){ echo "hide"; } ?>" id="btn-selanjutnya">Soal Selanjutnya</button>
                 </div>
             </div><!-- /.box -->
         </form>
@@ -581,6 +595,88 @@
     }
 
     $(function () {
+        // Proteksi Konten Ujian: Disable Copy, Cut, Paste, Klik Kanan, dan Keyboard Shortcuts
+        $(document).on('contextmenu', function(e) {
+            e.preventDefault();
+            alert("Fitur Klik Kanan dinonaktifkan untuk menjaga keamanan ujian.");
+            return false;
+        });
+
+        $(document).on('copy', function(e) {
+            e.preventDefault();
+            alert("Fitur Menyalin (Copy) teks ujian dinonaktifkan.");
+            return false;
+        });
+
+        $(document).on('cut', function(e) {
+            e.preventDefault();
+            alert("Fitur Memotong (Cut) teks ujian dinonaktifkan.");
+            return false;
+        });
+
+        $(document).on('paste', function(e) {
+            if ($(e.target).is('textarea') || $(e.target).is('input[type="text"]')) {
+                return true;
+            }
+            e.preventDefault();
+            alert("Fitur Menempel (Paste) dinonaktifkan.");
+            return false;
+        });
+
+        $(document).on('dragstart drop', function(e) {
+            if ($(e.target).is('textarea') || $(e.target).is('input[type="text"]')) {
+                return true;
+            }
+            e.preventDefault();
+            return false;
+        });
+
+        $(document).keydown(function(e) {
+            var isCtrlCmd = e.ctrlKey || e.metaKey;
+            
+            // F12 key (Inspect Element)
+            if (e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Ctrl+Shift+I / Cmd+Opt+I (Inspect Element)
+            if (isCtrlCmd && e.shiftKey && e.keyCode === 73) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Ctrl+C / Cmd+C (Copy)
+            if (isCtrlCmd && e.keyCode === 67) {
+                e.preventDefault();
+                alert("Fitur Menyalin (Copy) dinonaktifkan.");
+                return false;
+            }
+            
+            // Ctrl+V / Cmd+V (Paste) in non-input areas
+            if (isCtrlCmd && e.keyCode === 86) {
+                if ($(e.target).is('textarea') || $(e.target).is('input[type="text"]')) {
+                    return true;
+                }
+                e.preventDefault();
+                alert("Fitur Menempel (Paste) dinonaktifkan.");
+                return false;
+            }
+            
+            // Ctrl+U / Cmd+U (View Source)
+            if (isCtrlCmd && e.keyCode === 85) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Ctrl+P / Cmd+P (Print Screen / Print)
+            if (isCtrlCmd && e.keyCode === 80) {
+                e.preventDefault();
+                alert("Fitur Cetak (Print) dinonaktifkan selama ujian.");
+                return false;
+            }
+        });
+
         var sisa_detik = <?php if(!empty($detik_sisa)){ echo $detik_sisa; } ?>;
         setInterval(function() {
             var sisa_menit = Math.round(sisa_detik/60);

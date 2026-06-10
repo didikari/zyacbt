@@ -98,6 +98,9 @@
                     <div class="box-title">Audit Trail / Log Aktivitas Ujian</div>
                     <div class="box-tools pull-right">
                         <div style="display: inline-block; margin-right: 20px;">
+                            <a href="<?php echo site_url() . '/' . $url . '/export_log/' . $tes_user_id; ?>" class="btn btn-default btn-xs"><i class="fa fa-file-excel-o"></i> &nbsp;Export Excel/CSV</a>
+                        </div>
+                        <div style="display: inline-block; margin-right: 20px;">
                             <label style="font-weight: normal; cursor: pointer;">
                                 <input type="checkbox" id="auto-refresh-log" style="vertical-align: middle; margin-top: -3px;"> &nbsp;Auto-Refresh (10s)
                             </label>

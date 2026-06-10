@@ -131,4 +131,13 @@ class Cbt_tes_soal_model extends CI_Model{
                  ->from($this->table);
         return $this->db->get();
 	}
+
+    function get_last_opened_question($tesuser_id){
+        $this->db->where('tessoal_tesuser_id="'.$tesuser_id.'" AND tessoal_display_time IS NOT NULL')
+                 ->join('cbt_soal', 'cbt_tes_soal.tessoal_soal_id = cbt_soal.soal_id')
+                 ->from($this->table)
+                 ->order_by('tessoal_display_time', 'DESC')
+                 ->limit(1);
+        return $this->db->get();
+    }
 }

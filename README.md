@@ -87,14 +87,14 @@ Setelah instalasi selesai, buka browser Anda dan akses alamat berikut:
 
 - **Import Soal Praktis:** Mendukung import soal secara massal menggunakan file Excel/Spreadsheet (`.xls`/`.xlsx`) dan dokumen Microsoft Word.
 - **Tipe Soal Beragam:** Pilihan Ganda (Single & Multiple Answers), Jawaban Singkat, Menjodohkan, dan Soal Essay.
-- **Exam Browser Lock & Anti-Cheat Overlay:** Fitur penguncian peramban agar peserta tidak bisa keluar dari layar ujian. Dilengkapi overlay pelindung fullscreen dan deteksi tab-switch (pindah tab) yang langsung melaporkan jumlah pelanggaran ke dashboard pengawas.
+- **Exam Browser Lock & Anti-Cheat Overlay (NEW):** Fitur penguncian peramban agar peserta tidak bisa keluar dari layar ujian. Dilengkapi overlay pelindung fullscreen, deteksi tab-switch (pindah tab), serta proteksi konten berupa pencegahan klik kanan, copy (menyalin), cut (memotong), paste (menempel), drag-and-drop, dan blokir tombol shortcut inspeksi (F12, Inspect, View Source, Print Screen).
 - **Manajemen Kartu Ujian:** Generate dan cetak kartu ujian peserta secara otomatis langsung dari dasbor admin.
 - **Keamanan Terkini:** Menggunakan Bcrypt hashing untuk akun admin, enkripsi simetris (AES-256) untuk password peserta, penanganan cookies aman (HttpOnly), pencegahan SQL Injection dengan Query Bindings, dan pengalihan dinamis .htaccess.
 - **Konfigurasi Berbasis `.env` (NEW):** Mendukung konfigurasi database dan URL aplikasi melalui file `.env` (cukup salin `.env.example` ke `.env`), memudahkan pengaturan server lokal dan hosting tanpa menyentuh file PHP utama.
-- **Resiliensi CBT & Auto-Save Offline (NEW):** Jawaban siswa dicadangkan secara instan di `localStorage` browser. Sistem otomatis mendeteksi pemutusan internet dan melakukan sinkronisasi background otomatis (interval 10 detik) saat koneksi terhubung kembali.
+- **Resiliensi CBT & Auto-Save Offline (NEW):** Jawaban siswa dicadangkan secara instan di `localStorage` browser. Sistem mendeteksi pemutusan internet dan melakukan sinkronisasi background otomatis (interval 10 detik) saat koneksi terhubung kembali. Dilengkapi **Auto-Resume** yang otomatis mengarahkan siswa kembali ke nomor soal terakhir yang dibuka saat halaman ter-refresh atau masuk kembali.
 - **Kunci Sesi Perangkat / Device Lock (NEW):** Membatasi satu akun siswa hanya untuk satu perangkat aktif dengan verifikasi hash sidik jari (`IP` + `User-Agent`). Sesi browser pertama otomatis ter-logout jika akun login di perangkat/browser kedua.
 - **Proctor Dashboard Live Feed & Auto-Refresh (NEW):** Dashboard hasil pengawas memiliki fitur pembaruan otomatis (Auto-Refresh 15s) dan menyematkan badge pelanggaran merah secara dinamis bila siswa terdeteksi melakukan tab-switch atau keluar dari layar penuh.
-- **Audit Trail & Live Log Aktivitas Ujian (NEW):** Mencatat kronologi aktivitas siswa selama ujian (memuat halaman, navigasi soal, menyimpan jawaban, ganti status ragu, peringatan kecurangan, dan menghentikan ujian) lengkap dengan stempel waktu, IP, dan User-Agent. Halaman detail pengawas dilengkapi tombol & checkbox Auto-Refresh (10s) untuk melacak aktivitas siswa secara live.
+- **Audit Trail & Live Log Aktivitas Ujian (NEW):** Mencatat kronologi aktivitas siswa selama ujian (memuat halaman, navigasi soal, menyimpan jawaban, ganti status ragu, peringatan kecurangan, dan menghentikan ujian) lengkap dengan stempel waktu, IP, dan User-Agent. Halaman detail pengawas dilengkapi tombol & checkbox Auto-Refresh (10s) untuk melacak secara live, serta tombol **Export Excel/CSV** untuk mengunduh log audit tersebut.
 
 ---
 
@@ -104,4 +104,3 @@ Aplikasi ini dikembangkan asli oleh:
 - **Pengembang:** Achmad Lutfi
 - **Situs/Blog:** [achmadlutfi.wordpress.com](https://achmadlutfi.wordpress.com/)
 - **Kontak/Email:** achmdlutfi@gmail.com
-

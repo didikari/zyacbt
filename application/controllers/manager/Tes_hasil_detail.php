@@ -286,4 +286,60 @@ class Tes_hasil_detail extends Member_Controller {
         
 		echo json_encode($output);
 	}
+
+	function export_log($tesuser_id = null) {
+		if (empty($tesuser_id)) {
+			redirect('manager/tes_hasil');
+		}
+
+		// Get test info, student info, etc.
+		$query_testuser = $this->cbt_tes_user_model->get_by_kolom_limit('tesuser_id', $tesuser_id, 1);
+		if ($query_testuser->num_rows() == 0) {
+			redirect('manager/tes_hasil');
+		}
+		$query_testuser = $query_testuser->row();
+		$query_test = $this->cbt_tes_model->get_by_kolom_limit('tes_id', $query_testuser->tesuser_tes_id, 1)->row();
+		$query_user = $this->cbt_user_model->get_by_kolom_limit('user_id', $query_testuser->tesuser_user_id, 1)->row();
+
+		// Get all logs
+		$query_logs = $this->cbt_tes_user_log_model->get_by_tesuser_id($tesuser_id)->result();
+
+		// Define file name
+		$filename = "Audit_Trail_" . str_replace(' ', '_', $query_user->user_firstname) . "_" . str_replace(' ', '_', $query_test->tes_nama) . "_" . date('Ymd_His') . ".csv";
+
+		// Set headers for download
+		header('Content-Type: text/csv; charset=utf-8');
+		header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+		// Create file pointer
+		$output = fopen('php://output', 'w');
+
+		// Output Excel BOM for UTF-8 compatibility in Excel
+		fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+
+		// Write headers
+		fputcsv($output, array('Log Aktivitas Ujian'));
+		fputcsv($output, array('Nama Peserta', $query_user->user_firstname));
+		fputcsv($output, array('Nama Ujian', $query_test->tes_nama));
+		fputcsv($output, array('Waktu Mulai', $query_testuser->tesuser_creation_time));
+		fputcsv($output, array('')); // blank row
+		
+		fputcsv($output, array('No', 'Waktu', 'Aktivitas', 'Detail Informasi', 'IP Address', 'Browser / User-Agent'));
+
+		// Write data rows
+		$i = 1;
+		foreach ($query_logs as $log) {
+			fputcsv($output, array(
+				$i++,
+				$log->tesslog_time,
+				$log->tesslog_action,
+				$log->tesslog_info,
+				$log->tesslog_ip,
+				$log->tesslog_ua
+			));
+		}
+
+		fclose($output);
+		exit();
+	}
 }

@@ -101,8 +101,13 @@ class Tes_kerjakan extends Tes_Controller {
 						$data['tes_daftar_soal'] = $data_soal['tes_soal'];
 						$data['tes_soal_jml'] = $data_soal['tes_soal_jml'];
 
-						// Mengambil data soal ke 1
-						$tessoal = $this->cbt_tes_soal_model->get_by_testuser_limit($query_tes->tesuser_id, 1)->row();
+						// Mengambil data soal terakhir yang dibuka (Auto-Resume)
+						$query_last_soal = $this->cbt_tes_soal_model->get_last_opened_question($query_tes->tesuser_id);
+						if ($query_last_soal->num_rows() > 0) {
+							$tessoal = $query_last_soal->row();
+						} else {
+							$tessoal = $this->cbt_tes_soal_model->get_by_testuser_limit($query_tes->tesuser_id, 1)->row();
+						}
 						$data_soal = $this->get_soal($tessoal->tessoal_id, $query_tes->tesuser_id);
 
 						$data['tes_soal'] = $data_soal['tes_soal'];
