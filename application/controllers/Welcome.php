@@ -100,6 +100,14 @@ class Welcome extends CI_Controller {
 				if($hasil==1){
 					$result = $this->cbt_user_model->get_by_username($username);
 					
+					// Generate & save device signature
+					$ip_address = $this->input->ip_address();
+					$user_agent = $this->input->user_agent();
+					$device_sig = md5($ip_address . '_' . $user_agent);
+					
+					$data_device['user_ip'] = $device_sig;
+					$this->cbt_user_model->update('user_name', $username, $data_device);
+					
 					// Menyimpan session
 					$tanda = '@ZYACBT@';
 					$this->session->set_userdata('cbt_tes_tanda',$tanda.$result->user_name.$tanda);

@@ -93,7 +93,12 @@
 				<div class="box-header with-border">
 					<div class="box-title">Daftar Hasil Tes</div>
                     <div class="box-tools pull-right">
-                        <div class="dropdown pull-right">
+                        <div style="display: inline-block; margin-right: 20px;">
+                            <label style="font-weight: normal; cursor: pointer;">
+                                <input type="checkbox" id="auto-refresh" style="vertical-align: middle; margin-top: -3px;"> &nbsp;Auto-Refresh (15s)
+                            </label>
+                        </div>
+                        <div class="dropdown pull-right" style="display: inline-block;">
                             <a  style="cursor: pointer;" onclick="export_excel()">Export ke Excel</a>
                         </div>
                     </div>
@@ -304,5 +309,19 @@
 					aoData.push( { "name": "keterangan", "value": $('#pilih-keterangan').val()} );
                   }
          });          
-    });
+
+          var autoRefreshInterval = null;
+          $('#auto-refresh').change(function() {
+              if (this.checked) {
+                  autoRefreshInterval = setInterval(function() {
+                      refresh_table();
+                  }, 15000);
+              } else {
+                  if (autoRefreshInterval) {
+                      clearInterval(autoRefreshInterval);
+                      autoRefreshInterval = null;
+                  }
+              }
+          });
+     });
 </script>

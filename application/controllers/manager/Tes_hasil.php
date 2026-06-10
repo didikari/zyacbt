@@ -238,20 +238,24 @@ class Tes_hasil extends Member_Controller {
 			if(empty($temp->tesuser_status)){
 				$record[] = 'Belum memulai';
 			}else{
+				$violation_badge = '';
+				if (!empty($temp->tesuser_comment)) {
+					$violation_badge = ' <span class="label label-danger" style="margin-left:5px;">Pelanggaran: '.$temp->tesuser_comment.'/3</span>';
+				}
 				if($temp->tesuser_status==1){
 					$tanggal = new DateTime();
 					// Cek apakah tes sudah melebihi batas waktu
 					$tanggal_tes = new DateTime($temp->tesuser_creation_time);
 					$tanggal_tes->modify('+'.$temp->tes_duration_time.' minutes');
 					if($tanggal>$tanggal_tes){
-						$record[] = 'Selesai';
+						$record[] = 'Selesai' . $violation_badge;
 					}else{
 						$tanggal = $tanggal_tes->diff($tanggal);
 						$menit_sisa = ($tanggal->h*60)+($tanggal->i);
-						$record[] = 'Berjalan (-'.$menit_sisa.' menit)';
+						$record[] = 'Berjalan (-'.$menit_sisa.' menit)' . $violation_badge;
 					}
 				}else{
-					$record[] = 'Selesai';
+					$record[] = 'Selesai' . $violation_badge;
 				}
 			}
 			

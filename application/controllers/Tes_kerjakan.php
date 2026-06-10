@@ -608,4 +608,25 @@ class Tes_kerjakan extends Tes_Controller {
         }
         echo json_encode($data);
     }
+
+    function update_log_kecurangan(){
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('tes-user-id', 'Tes User ID','required|strip_tags');
+        $this->form_validation->set_rules('violation-count', 'Violation Count','required|strip_tags');
+        
+        if($this->form_validation->run() == TRUE){
+            $tesuser_id = $this->input->post('tes-user-id', TRUE);
+            $violation_count = $this->input->post('violation-count', TRUE);
+            
+            $data_tes['tesuser_comment'] = $violation_count;
+            $this->cbt_tes_user_model->update('tesuser_id', $tesuser_id, $data_tes);
+            
+            $status['status'] = 1;
+            $status['pesan'] = "Pelanggaran berhasil dicatat";
+        }else{
+            $status['status'] = 0;
+            $status['pesan'] = validation_errors();
+        }
+        echo json_encode($status);
+    }
 }

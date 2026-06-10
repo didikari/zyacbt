@@ -141,6 +141,90 @@
 </div><!-- /.container -->
 
 <script type="text/javascript">
+    function saveAnswerLocal(tessoal_id, answerVal) {
+        var testUserId = $('#tes-user-id').val();
+        var backupKey = 'cbt_answers_' + testUserId;
+        var answers = JSON.parse(localStorage.getItem(backupKey) || '{}');
+        
+        answers[tessoal_id] = {
+            'tes-id': $('#tes-id').val(),
+            'tes-user-id': testUserId,
+            'tes-soal-id': tessoal_id,
+            'tes-soal-nomor': $('#tes-soal-nomor').val(),
+            'soal-jawaban': answerVal,
+            'synced': false,
+            'timestamp': Date.now()
+        };
+        
+        localStorage.setItem(backupKey, JSON.stringify(answers));
+    }
+
+    function markAnswerSynced(tessoal_id) {
+        var testUserId = $('#tes-user-id').val();
+        var backupKey = 'cbt_answers_' + testUserId;
+        var answers = JSON.parse(localStorage.getItem(backupKey) || '{}');
+        
+        if (answers[tessoal_id]) {
+            answers[tessoal_id].synced = true;
+            localStorage.setItem(backupKey, JSON.stringify(answers));
+        }
+    }
+
+    function syncOfflineAnswers() {
+        var testUserId = $('#tes-user-id').val();
+        var backupKey = 'cbt_answers_' + testUserId;
+        var answers = JSON.parse(localStorage.getItem(backupKey) || '{}');
+        
+        var unsyncedIds = [];
+        for (var id in answers) {
+            if (answers.hasOwnProperty(id) && !answers[id].synced) {
+                unsyncedIds.push(id);
+            }
+        }
+        
+        if (unsyncedIds.length === 0) {
+            $('#sync-status-indicator').hide();
+            return;
+        }
+        
+        if ($('#sync-status-indicator').length === 0) {
+            $('#sisa-waktu').after('<div id="sync-status-indicator" class="pull-right" style="margin-right: 15px; color: #f39c12;"><i class="fa fa-refresh fa-spin"></i> Mensinkronisasi jawaban...</div>');
+        } else {
+            $('#sync-status-indicator').show();
+        }
+        
+        var idToSync = unsyncedIds[0];
+        var dataToSync = answers[idToSync];
+        
+        $.ajax({
+            url: "<?php echo site_url().'/'.$url; ?>/simpan_jawaban",
+            type: "POST",
+            data: {
+                'tes-id': dataToSync['tes-id'],
+                'tes-user-id': dataToSync['tes-user-id'],
+                'tes-soal-id': dataToSync['tes-soal-id'],
+                'tes-soal-nomor': dataToSync['tes-soal-nomor'],
+                'soal-jawaban': dataToSync['soal-jawaban']
+            },
+            cache: false,
+            timeout: 5000,
+            success: function(respon) {
+                var obj = $.parseJSON(respon);
+                if (obj.status == 1) {
+                    markAnswerSynced(idToSync);
+                    $('#btn-soal-' + dataToSync['tes-soal-nomor']).removeClass('btn-default btn-warning').addClass('btn-primary');
+                    syncOfflineAnswers();
+                } else if (obj.status == 2) {
+                    localStorage.removeItem(backupKey);
+                    window.location.reload();
+                }
+            },
+            error: function() {
+                // Silence error, retry next time
+            }
+        });
+    }
+
     function isFullscreen() {
         return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
     }
@@ -209,6 +293,20 @@
         var storageKey = 'cbt_warning_count_' + testUserId;
         var count = parseInt(localStorage.getItem(storageKey) || '0') + 1;
         localStorage.setItem(storageKey, count);
+        
+        // Kirim log kecurangan ke server
+        $.ajax({
+            url: "<?php echo site_url().'/'.$url; ?>/update_log_kecurangan",
+            type: "POST",
+            data: {
+                'tes-user-id': testUserId,
+                'violation-count': count
+            },
+            cache: false,
+            success: function() {
+                // Berhasil mencatat ke server
+            }
+        });
         
         if (count >= 3) {
             force_hentikan_tes();
@@ -358,6 +456,20 @@
                         $('#btn-ragu-checkbox').prop("checked", true);
                     }
 
+                    // Pre-fill answer if we have unsynced backup
+                    var testUserId = $('#tes-user-id').val();
+                    var backupKey = 'cbt_answers_' + testUserId;
+                    var answers = JSON.parse(localStorage.getItem(backupKey) || '{}');
+                    if (answers[data.tes_soal_id] && !answers[data.tes_soal_id].synced) {
+                        var localVal = answers[data.tes_soal_id]['soal-jawaban'];
+                        var radioInput = $('input[name="soal-jawaban"][value="' + localVal + '"]');
+                        if (radioInput.length > 0) {
+                            radioInput.prop('checked', true);
+                        } else {
+                            $('#soal-jawaban').val(localVal);
+                        }
+                    }
+
                     // menghilangkan tombol sebelum jika soal di nomor1
                     // dan menghilangkan tombol selanjutnya jika disoal terakhir
                     var tes_soal_nomor = parseInt($('#tes-soal-nomor').val());
@@ -478,6 +590,7 @@
             if(sisa_detik<1){
                 var testUserId = $('#tes-user-id').val();
                 localStorage.removeItem('cbt_warning_count_' + testUserId);
+                localStorage.removeItem('cbt_answers_' + testUserId);
                 window.location.reload();
             }
         }, 1000);
@@ -498,6 +611,21 @@
          */
         $('#form-kerjakan').submit(function(){
             $("#modal-proses").modal('show');
+            
+            // Get current tessoal ID
+            var tessoalId = $('#tes-soal-id').val();
+            // Get current answer value
+            var answerVal = '';
+            var radioAnswer = $('input[name="soal-jawaban"]:checked');
+            if (radioAnswer.length > 0) {
+                answerVal = radioAnswer.val();
+            } else {
+                answerVal = $('#soal-jawaban').val() || '';
+            }
+            
+            // Save locally first with synced = false
+            saveAnswerLocal(tessoalId, answerVal);
+
             $.ajax({
                     url:"<?php echo site_url().'/'.$url; ?>/simpan_jawaban",
                     type:"POST",
@@ -512,9 +640,13 @@
                             $('#btn-soal-'+obj.nomor_soal).removeClass('btn-default');
                             $('#btn-soal-'+obj.nomor_soal).removeClass('btn-warning');
                             $('#btn-soal-'+obj.nomor_soal).addClass('btn-primary');
+                            
+                            // Mark as synced locally
+                            markAnswerSynced(tessoalId);
                         }else if(obj.status==2){
                             var testUserId = $('#tes-user-id').val();
                             localStorage.removeItem('cbt_warning_count_' + testUserId);
+                            localStorage.removeItem('cbt_answers_' + testUserId);
                             window.location.reload();
                         }else{
                             $("#modal-proses").modal('hide');
@@ -522,13 +654,8 @@
                         }
                     },
                     error: function(xmlhttprequest, textstatus, message) {
-                        if(textstatus==="timeout") {
-                            $("#modal-proses").modal('hide');
-                            notify_error("Gagal menyimpan jawaban, Silahkan Refresh Halaman");
-                        }else{
-                            $("#modal-proses").modal('hide');
-                            notify_error(textstatus);
-                        }
+                        $("#modal-proses").modal('hide');
+                        notify_info("Jawaban disimpan offline secara lokal di browser dan akan disinkronisasikan otomatis saat jaringan stabil.");
                     }
             });
             return false;
@@ -550,6 +677,7 @@
                         if(obj.status==1){
                             var testUserId = $('#tes-user-id').val();
                             localStorage.removeItem('cbt_warning_count_' + testUserId);
+                            localStorage.removeItem('cbt_answers_' + testUserId);
                             window.location.reload();
                         }else{
                             $("#modal-proses").modal('hide');
@@ -576,6 +704,8 @@
                 $('#cheat-overlay').hide();
                 window.cbt_initialized = true;
             }
+            syncOfflineAnswers();
+            setInterval(syncOfflineAnswers, 10000);
         });
     });
 </script>

@@ -50,12 +50,29 @@ class Access_tes{
 		return 0;
 	}
 	
-	/**
-	 * cek apakah sudah login
-	 * @return boolean
-	 */
 	function is_login(){
-		return (($this->CI->session->userdata('cbt_tes_user_id')) ? TRUE : FALSE);
+		if($this->CI->session->userdata('cbt_tes_user_id')) {
+			$username = $this->CI->session->userdata('cbt_tes_user_id');
+			$user = $this->users_model->get_by_username($username);
+			if ($user) {
+				$current_ip = $this->CI->input->ip_address();
+				$current_ua = $this->CI->input->user_agent();
+				$current_sig = md5($current_ip . '_' . $current_ua);
+				
+				if (empty($user->user_ip)) {
+					// Backward compatibility: set it if empty
+					$this->users_model->update('user_name', $username, array('user_ip' => $current_sig));
+					return TRUE;
+				}
+				
+				if ($user->user_ip !== $current_sig) {
+					$this->logout();
+					return FALSE;
+				}
+				return TRUE;
+			}
+		}
+		return FALSE;
 	}
 	
 	function get_username(){
